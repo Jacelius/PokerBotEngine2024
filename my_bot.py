@@ -5,7 +5,7 @@ import random
 
 class Bot:
   def get_name(self):
-      return "MAGLEVA uden hop"
+      return "MAGLEVA uden hoppebob"
   
   def get_current_hand(obs: Observation):
      return obs.get_my_hand_type()
@@ -36,9 +36,18 @@ class Bot:
     are_we_big_blind = obs.my_index == 1
     are_we_small_blind = obs.my_index == 0
     free_check = obs.get_call_size() == 0
+    is_call_all_in = obs.get_call_size() >= my_money
+
+    if hand_val >= 5 and obs.can_raise(): 
+      return obs.get_min_raise()
 
     match obs.current_round:
       case 0: # preflop
+        if pocketpairs:
+          if did_anyone_raise and obs.get_call_size() < my_money:
+            return 1 # call 
+          return min_raise
+
         if are_we_big_blind: #We are big blind
           if free_check:
             return 1
@@ -46,24 +55,25 @@ class Bot:
         if are_we_small_blind: #We are small blind
           if free_check:
             return 1
-
-        if pocketpairs:
-          if did_anyone_raise and obs.get_call_size() < my_money:
-            return 1 # call 
-          return min_raise
         
         if hand_val == 1 and did_anyone_raise:
           return 0
       case 1:
         if not did_anyone_raise and obs.can_raise():
           return min_raise
+        if hand_val < 2 and is_call_all_in:
+          return 0
       case 2:
         print("turn")
       case 3:
         if hand_val == 1 and did_anyone_raise:
           return 0
+        if hand_val < 2 and is_call_all_in:
+          return 0
       case _:
-        pass
-      
+        if hand_val < 2 and is_call_all_in:
+          return 0
+        if obs.can_raise() and hand_val >= 2:
+          return min_raise
     return 1 # check / call
 
